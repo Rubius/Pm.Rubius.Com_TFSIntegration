@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <script src="scripts/VSS.SDK.min.js"></script>
+</head>
+<body>
+<div>
+    <h2 id="header">Enter time and comment</h2>
+    <p>
+        <label>Comment:</label>
+        <input id="inpComment"/>
+    </p>
+    <p>
+        <label>Time:</label>
+        <input id="inpTime"/>
+    </p>
+
+</div>
+<script>
+    VSS.init();
+
+    var reportTimeForm = (function () {
+        var callbacks = [];
+
+        function inputChanged() {
+            // Execute registered callbacks
+            for(var i = 0; i < callbacks.length; i++) {
+                callbacks[i](isValid());
+            }
+        }
+
+        function isValid() {
+            // Check whether form is valid or not
+            var timeValue = parseFloat(time.value);
+            return !!(comment.value) && !!(timeValue) && (timeValue > 0 && timeValue <= 4);
+        }
+
+        function getFormData() {
+            // Get form values
+            return {
+                comment: comment.value,
+                time: parseFloat(time.value),
+            };
+        }
+
+        var comment = document.getElementById("inpComment");
+        var time = document.getElementById("inpTime");
+
+        comment.addEventListener("keyup", inputChanged);
+        time.addEventListener("keyup", inputChanged);
+
+        return {
+            isFormValid: function() {
+                return isValid();
+            },
+            getFormData: function() {
+                return getFormData();
+            },
+            attachFormChanged: function(cb) {
+                callbacks.push(cb);
+            },
+            setComment: function(text) {
+                comment.value = text;
+            }
+        };
+    })();
+    VSS.register("report-time-form", reportTimeForm);
+</script>
+
+
+<script type="text/javascript">VSS.notifyLoadSucceeded();</script>
+</body>
+</html>

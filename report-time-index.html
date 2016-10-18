@@ -1,0 +1,156 @@
+ <!DOCTYPE html>
+ <html xmlns="http://www.w3.org/1999/xhtml">
+ <head>
+     <title>Hello World</title>
+     <script src="scripts/VSS.SDK.min.js"></script>
+ </head>
+ <body>
+     <script>
+         VSS.init();
+
+         var PmRestClient = (function () {
+             var rootUrl = "https://testpm.rubius.com";
+
+             function GetData(url, data) {
+                 $.support.cors = true;
+                 return $.ajax({
+                     url: rootUrl + url,
+                     xhrFields: {
+                         withCredentials: true
+                     },
+                     data: data
+                 });
+
+             }
+
+             return {
+                 IsAuthorized: function() {
+                     return GetData('/PmApi/UserIsAuthenticated');
+                 },
+                 ReportTime: function(data) {
+                     return GetData('/PmApi/CreateTimeRecord', data);
+                 },
+             };
+         })();
+
+         var Dialogs;
+         var Controls;
+         var StatusIndicator;
+         var VSS_Service;
+         var TFS_Wit_WebApi;
+         var WitClient;
+         VSS.require(["VSS/Controls/Dialogs", "VSS/Controls", "VSS/Controls/StatusIndicator", "VSS/Service", "TFS/WorkItemTracking/RestClient"], function(dialogs, controls, statusIndicator, service, restClient) {
+             // Create the wait control in a container element
+             Dialogs = dialogs;
+             Controls = controls;
+             StatusIndicator = statusIndicator;
+             VSS_Service = service;
+             TFS_Wit_WebApi = restClient;
+             WitClient = VSS_Service.getCollectionClient(TFS_Wit_WebApi.WorkItemTrackingHttpClient);
+         });
+
+         var reportHoursHandler = (function () {
+             "use strict";
+
+             return {
+                 // This is a callback that gets invoked when a user clicks the newly contributed menu item
+                 // The actionContext parameter contains context data surrounding the circumstances of this
+                 // action getting invoked.
+                 execute: function (actionContext) {
+                     var webContext = VSS.getWebContext();
+                     var projectId =  webContext.project.id;
+                     var workItemId = actionContext.id;
+                     if (!workItemId && actionContext.workItemIds) {
+                         workItemId = actionContext.workItemIds[0];
+                     }
+
+                     PmRestClient.IsAuthorized().then(function (result) {
+                         if (!result) {
+                             alert('You must be authorized in Pm.Rubius.Com to proceed. Please open http://pm.rubius.com in separate tab and authorize there');
+                         }
+
+                         WitClient.getWorkItems([workItemId], ["System.Title", "System.AreaId"]).then(function (workItems) {
+                             var workItem = workItems[0];
+
+                             var areaId = workItem.fields['System.AreaId'];
+                             var workItemTitle = workItem.fields['System.Title'];
+
+                             VSS.getService(VSS.ServiceIds.Dialog).then(function(dialogService) {
+                                 var extensionCtx = VSS.getExtensionContext();
+
+                                 // Build absolute contribution ID for dialogContent
+                                 var contributionId = extensionCtx.publisherId + "." + extensionCtx.extensionId + ".report-time-form";
+                                 var reportTimeForm;
+
+                                 var options = {
+                                     width: 600,
+                                     title: "Report Time",
+                                     okText: "OK",
+                                     cancelText: "Cancel",
+                                     height: 300,
+                                     getDialogResult: function() {
+                                         return reportTimeForm ? reportTimeForm.getFormData() : null;
+                                     },
+                                     okCallback: function (result) {
+
+                                         var waitcontrol = Controls.create(StatusIndicator.WaitControl, 'report-time-form', {
+                                             message: 'Saving report time...',
+                                         });
+                                         waitcontrol.startWait();
+
+                                         PmRestClient.ReportTime({
+                                             Comment: result.comment,
+                                             Time: result.time,
+                                             WorkItemId: workItemId,
+                                             ProjectId: projectId,
+                                             AreaId: areaId,
+                                         }).then(function (result) {
+                                             waitcontrol.endWait();
+                                             if (!result) {
+                                                 alert("Error occured, time report wasn't saved");
+                                                 return;
+                                             }
+                                             if (result.error) {
+                                                 alert("Error occured, time report wasn't saved. " + result.error);
+                                             }
+                                         });
+                                     }
+                                 };
+
+                                 dialogService.openDialog(contributionId, options).then(function (dialog) {
+                                     dialog.getContributionInstance("report-time-form").then(function (reportTimeFormInstance) {
+
+                                         // Keep a reference of registration form instance (to be used above in dialog options)
+                                         reportTimeForm = reportTimeFormInstance;
+                                         reportTimeForm.setComment(workItemTitle);
+
+                                         // Subscribe to form input changes and update the Ok enabled state
+                                         reportTimeForm.attachFormChanged(function(isValid) {
+                                             dialog.updateOkButton(isValid);
+                                         });
+
+                                         // Set the initial ok enabled state
+                                         reportTimeForm.isFormValid().then(function (isValid) {
+                                             dialog.updateOkButton(isValid);
+                                         });
+                                     });
+                                 });
+                             });
+                         });
+                     });
+
+
+
+
+                 }
+             };
+         })();
+         VSS.register("showReportTime", reportHoursHandler);
+
+     </script>
+
+
+
+     <script type="text/javascript">VSS.notifyLoadSucceeded();</script>
+ </body>
+ </html>

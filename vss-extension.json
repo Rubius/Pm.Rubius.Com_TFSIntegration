@@ -1,0 +1,63 @@
+{
+        "manifestVersion": 1,
+        "id": "rubius-pm-integration",
+        "version": "0.1.29",
+        "name": "PM Integration extension",
+        "description": "Adds an ability to pass spent time on a task to PM.rubius.com",
+        "publisher": "rubius",
+        "targets": [
+            {
+                "id": "Microsoft.VisualStudio.Services"
+                }
+            ],
+        "icons": {
+            "default": "images/logo.png"
+         },
+        "contributions": [
+            {
+              "id": "Rubius.PmIntegration.Menu.ReportHours",
+              "type": "ms.vss-web.action",
+              "description": "PM.Rubius.Com",
+              "targets": [
+                "ms.vss-work-web.work-item-context-menu"
+              ],
+              "properties": {
+                "text": "Report time",
+                "order": 99,
+                "icon": "images/logo_small.png",
+                "title": "Report time spent on the task to pm.rubius.com",
+                "uri": "report-time-index.html",
+                "registeredObjectId": "showReportTime"
+              }
+          },
+          {
+            "id": "report-time-form",
+            "type": "ms.vss-web.control",
+            "description": "",
+            "targets": [],
+            "properties": {
+              "uri": "report-time-form.html"
+            }
+          }
+        ],
+        "scopes": [
+            "vso.work"
+        ],
+        "files": [
+            {
+                "path": "report-time-index.html", "addressable": true
+            },
+            {
+                "path": "report-time-form.html", "addressable": true
+            },
+            {
+                "path": "scripts", "addressable": true
+            },
+            {
+                "path": "images/logo.png", "addressable": true
+            },
+            {
+                "path": "images/logo_small.png", "addressable": true
+            }
+        ]
+    }
