@@ -67,6 +67,7 @@
                      PmRestClient.IsAuthorized().then(function (result) {
                          if (!result) {
                              alert('You must be authorized in Pm.Rubius.Com to proceed. Please open http://pm.rubius.com in separate tab and authorize there');
+                             return;
                          }
 
                          WitClient.getWorkItems([workItemId], ["System.Title", "System.AreaId"]).then(function (workItems) {

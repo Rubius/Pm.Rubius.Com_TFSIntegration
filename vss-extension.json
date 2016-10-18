@@ -1,7 +1,7 @@
 {
         "manifestVersion": 1,
         "id": "rubius-pm-integration",
-        "version": "0.1.29",
+        "version": "0.1.30",
         "name": "PM Integration extension",
         "description": "Adds an ability to pass spent time on a task to PM.rubius.com",
         "publisher": "rubius",
